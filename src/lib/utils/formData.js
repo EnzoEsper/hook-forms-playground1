@@ -1,4 +1,4 @@
-const idps = [
+export const idps = [
   {
     orden: 1,
     tipoDato: "NUMERO",
@@ -21,9 +21,81 @@ const idps = [
     valorMinimo: null,
     requerido: false,
   },
+  {
+    orden: 3,
+    tipoDato: "TABLA",
+    tag: "T54",
+    nombre: "Motivo de la Devolucion",
+    longitudMaxima: 2,
+    longitudMinima: 2,
+    valorMaximo: null,
+    valorMinimo: null,
+    requerido: true,
+    tabla: {
+      id: "054",
+      nombre: "Devolucion de Transferencias",
+      contenidos: [
+        {
+          codigo: "01",
+          contenido: "Cuenta inexistente / cerrada / en tramite de cierre",
+        },
+        {
+          codigo: "02",
+          contenido: "Cuenta bloqueada / inmovilizada",
+        },
+        {
+          codigo: "03",
+          contenido: "Cliente Inexistente",
+        },
+        {
+          codigo: "04",
+          contenido: "A Solicitud del beneficiario",
+        },
+        {
+          codigo: "05",
+          contenido: "A Solicitud de la Entidad Emisora",
+        },
+        {
+          codigo: "06",
+          contenido: "Moneda Distinta a la Cuenta del Credito",
+        },
+        {
+          codigo: "07",
+          contenido: "Transferencia Duplicada",
+        },
+        {
+          codigo: "08",
+          contenido: "No coincide CUIT/CUIL/CDI con el del CBU",
+        },
+        {
+          codigo: "09",
+          contenido: "No coincide con comprobantes recibidos / Falta respaldo de documentacion",
+        },
+        {
+          codigo: "10",
+          contenido: "Falta instruction de pago",
+        },
+        {
+          codigo: "11",
+          contenido: "Falta algun dato / Imposibilidad de Cumplimiento (se especifica en observaciones)",
+        },
+      ],
+    },
+  },
+  {
+    orden: 4,
+    tipoDato: "FECHA_VARIABLE",
+    tag: "FDV",
+    nombre: "Fecha Original de MEP",
+    longitudMaxima: 8,
+    longitudMinima: 8,
+    valorMaximo: 0,
+    valorMinimo: -365,
+    requerido: true,
+  },
 ];
 
-const fixed = [
+export const fixed = [
   {
     orden: 1000,
     tipoDato: "TEXTO",
@@ -40,7 +112,7 @@ const fixed = [
     tipoDato: "NUMERO",
     tag: "Importe",
     nombre: "Importe",
-    longitudMaxima: 999999,
+    longitudMaxima: 5,
     longitudMinima: 1,
     valorMaximo: null,
     valorMinimo: null,
@@ -188,6 +260,8 @@ const generateFormData = (instructions) => {
     let validations = [];
 
     if (instruction.longitudMinima) {
+      // let longitudMinima =
+      //   instruction.tipoDato === "NUMERO" ? Math.pow(10, instruction.longitudMinima) - 1 : instruction.longitudMinima;
       validations = [
         ...validations,
         {
@@ -201,14 +275,13 @@ const generateFormData = (instructions) => {
     }
 
     if (instruction.longitudMaxima) {
+      let longitudMaxima =
+        instruction.tipoDato === "NUMERO" ? Math.pow(10, instruction.longitudMaxima) - 1 : instruction.longitudMaxima;
       validations = [
         ...validations,
         {
           type: "max",
-          params: [
-            instruction.longitudMaxima,
-            `${instruction.nombre} debe tener una logitud maxima de ${instruction.longitudMaxima}`,
-          ],
+          params: [longitudMaxima, `${instruction.nombre} debe tener una logitud maxima de ${longitudMaxima}`],
         },
       ];
     }
@@ -230,6 +303,18 @@ const generateFormData = (instructions) => {
       case "NUMERO":
         validationType = "number";
         break;
+      case "TABLA":
+        validationType = "string";
+        break;
+      case "FECHA_VARIABLE":
+        validations = [
+          {
+            type: "required",
+            params: [`${instruction.nombre} es requerido`],
+          },
+        ];
+        validationType = "string";
+        break;
       default:
         validationType = "string";
         break;
@@ -239,7 +324,8 @@ const generateFormData = (instructions) => {
       id: instruction.tag,
       label: instruction.nombre,
       placeholder: `Inserte ${instruction.nombre}`,
-      type: "text",
+      // type: "text",
+      dataType: instruction.tipoDato,
       validationType: validationType,
       value: "",
       validations: validations,
